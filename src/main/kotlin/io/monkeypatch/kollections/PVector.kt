@@ -29,8 +29,8 @@ data class PVector<T>(
             }
         }
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
+    // maybe inline
+    private fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
 
     private fun pushTail(level: Int, parent: Node, tailNode: Node): Node {
         val subIndex = (size - 1).indexAtLevel(level)
@@ -81,6 +81,21 @@ data class PVector<T>(
         size -> this + elem
         else -> throw IndexOutOfBoundsException()
     }
+
+    fun asSequence(start: Int = 0, end: Int = size) = sequence {
+        var i = start
+        var base = i - i % 32
+        var array = arrayFor(i)
+
+        while (i < end) {
+            if (i - base == 32) {
+                array = arrayFor(i)
+                base += 32
+            }
+            yield(array[i.indexAtLeaf()] as T)
+            i += 1
+        }
+    }
 }
 
 private fun newPath(shift: Int, node: Node): Node =
@@ -104,8 +119,11 @@ private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node {
     return Node(newData)
 }
 
-private inline fun Int.indexAtLeaf() = this and 0x01f
-private inline fun Int.indexAtLevel(level: Int) = (this ushr level) and 0x01f
+// maybe inline
+private fun Int.indexAtLeaf() = this and 0x01f
+
+// maybe inline
+private fun Int.indexAtLevel(level: Int) = (this ushr level) and 0x01f
 
 data class Node(
     val data: Array<Any?>
