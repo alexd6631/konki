@@ -52,6 +52,20 @@ internal class PVectorTest : StringSpec() {
                 }
             }
         }
+
+        "test native fold" {
+            val vectors = generateVectors(nVectors)
+            val v = vectors.last()
+
+            v.fold(0) { acc, i -> acc + i }
+        }
+
+        "testFold" {
+            val vectors = generateVectors(nVectors)
+            val v = vectors.last()
+
+            v.asSequence().fold(0) { acc, i -> acc + i}
+        }
     }
 }
 

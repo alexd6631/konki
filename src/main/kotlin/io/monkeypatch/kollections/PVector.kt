@@ -70,15 +70,9 @@ data class PVector<T>(
                 }
                 PVector(size, shift, root, newTail)
             } else {
-                PVector(
-                    size,
-                    shift,
-                    copyPath(i, shift, root, elem),
-                    tail
-                )
+                PVector(size, shift, copyPath(i, shift, root, elem), tail)
             }
         }
-        size -> this + elem
         else -> throw IndexOutOfBoundsException()
     }
 
@@ -95,6 +89,23 @@ data class PVector<T>(
             yield(array[i.indexAtLeaf()] as T)
             i += 1
         }
+    }
+
+    fun <R> fold(initial: R, f: (R, T) -> R): R {
+        var i = 0
+        var base = i - i % 32
+        var array = arrayFor(i)
+        var acc = initial
+
+        while (i < size) {
+            if (i - base == 32) {
+                array = arrayFor(i)
+                base += 32
+            }
+            acc = f(acc, array[i.indexAtLeaf()] as T)
+            i += 1
+        }
+        return acc
     }
 }
 
