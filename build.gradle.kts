@@ -1,3 +1,5 @@
+import me.champeau.gradle.JMHPluginExtension
+import me.champeau.gradle.JMHTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -28,3 +30,9 @@ val test by tasks.getting(Test::class) {
 
 compileKotlin.kotlinOptions.jvmTarget = "1.8"
 compileTestKotlin.kotlinOptions.jvmTarget = "1.8"
+
+
+configure<JMHPluginExtension> {
+    fork = 1
+    //iterations = 3
+}

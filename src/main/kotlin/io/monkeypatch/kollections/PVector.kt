@@ -29,7 +29,6 @@ data class PVector<T>(
             }
         }
 
-    // maybe inline
     private fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
 
     private fun pushTail(level: Int, parent: Node, tailNode: Node): Node {
@@ -52,7 +51,8 @@ data class PVector<T>(
         else null
 
     private fun arrayFor(i: Int): Array<Any?> =
-        if (i >= tailOffset) tail else {
+        if (i >= tailOffset) tail
+        else {
             var node = root
             var level = shift
             while (level > 0) {
@@ -62,8 +62,8 @@ data class PVector<T>(
             node.data
         }
 
-    fun update(i: Int, elem: T): PVector<T> = when (i) {
-        in 0 until size -> {
+    fun update(i: Int, elem: T): PVector<T> =
+        if (i in 0 until size) {
             if (i >= tailOffset) {
                 val newTail = tail.copyOf().also {
                     it[i.indexAtLeaf()] = elem as Any?
@@ -72,38 +72,35 @@ data class PVector<T>(
             } else {
                 PVector(size, shift, copyPath(i, shift, root, elem), tail)
             }
-        }
-        else -> throw IndexOutOfBoundsException()
-    }
+        } else throw IndexOutOfBoundsException()
 
-    fun asSequence(start: Int = 0, end: Int = size) = sequence {
-        var i = start
-        var base = i - i % 32
-        var array = arrayFor(i)
+    fun asSequence(start: Int = 0, end: Int = size) = Sequence {
+        object : Iterator<T> {
+            var i = start
+            var base = i - i % 32
+            var array = arrayFor(i)
 
-        while (i < end) {
-            if (i - base == 32) {
-                array = arrayFor(i)
-                base += 32
+            override fun hasNext(): Boolean = i < end
+
+            override fun next(): T {
+                if (i - base == 32) {
+                    array = arrayFor(i)
+                    base += 32
+                }
+                return (array[i.indexAtLeaf()] as T).also { i += 1 }
             }
-            yield(array[i.indexAtLeaf()] as T)
-            i += 1
         }
     }
 
     fun <R> fold(initial: R, f: (R, T) -> R): R {
         var i = 0
-        var base = i - i % 32
-        var array = arrayFor(i)
         var acc = initial
-
         while (i < size) {
-            if (i - base == 32) {
-                array = arrayFor(i)
-                base += 32
+            val array = arrayFor(i)
+            for (e in array) {
+                acc = f(acc, e as T)
             }
-            acc = f(acc, array[i.indexAtLeaf()] as T)
-            i += 1
+            i += array.size
         }
         return acc
     }
@@ -113,27 +110,19 @@ private fun newPath(shift: Int, node: Node): Node =
     if (shift == 0) node
     else Node().apply { data[0] = newPath(shift - 5, node) }
 
-private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node {
-    val newData = if (level == 0) {
+private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node = Node(
+    if (level == 0) {
         node.data.copyOf().also { it[i.indexAtLeaf()] = elem }
     } else {
         val subIndex = i.indexAtLevel(level)
         node.data.copyOf().also {
-            it[subIndex] = copyPath(
-                i,
-                level - 5,
-                node.data[subIndex] as Node,
-                elem
-            )
+            it[subIndex] = copyPath(i, level - 5, node.data[subIndex] as Node, elem)
         }
     }
-    return Node(newData)
-}
+)
 
-// maybe inline
 private fun Int.indexAtLeaf() = this and 0x01f
 
-// maybe inline
 private fun Int.indexAtLevel(level: Int) = (this ushr level) and 0x01f
 
 data class Node(
@@ -153,7 +142,7 @@ fun main() {
         //println(after)
         after
     }
-    println(end[1025])
+    println(end[1024])
     println(end.update(42, 777)[42])
     println("Done")
 }

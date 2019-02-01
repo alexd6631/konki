@@ -6,7 +6,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import kotlin.random.Random
 
-const val nVectors = 1_000_000
+const val nVectors = 1000//1_000_000
 const val nIterations = 100
 
 internal class PVectorTest : StringSpec() {
@@ -27,8 +27,9 @@ internal class PVectorTest : StringSpec() {
         "test update" {
             val vectors = generateVectors(nVectors)
 
-            assertAll(nIterations, Gen.choose(0, nVectors)) { i ->
-                val k = Random.nextInt(i)
+            assertAll(nIterations, Gen.choose(10, nVectors)) { i ->
+                val k = i / 2
+                //println(i)
                 val v = vectors[i].update(k, 42).update(i - 1, 84)
                 v.size shouldBe i
                 for (j in 0 until i) {
@@ -54,17 +55,11 @@ internal class PVectorTest : StringSpec() {
         }
 
         "test native fold" {
-            val vectors = generateVectors(nVectors)
-            val v = vectors.last()
+            val range = 0 until nVectors
+            val v = range.fold(emptyPersistentVector<Int>()) { acc, i -> acc + i }
 
-            v.fold(0) { acc, i -> acc + i }
-        }
-
-        "testFold" {
-            val vectors = generateVectors(nVectors)
-            val v = vectors.last()
-
-            v.asSequence().fold(0) { acc, i -> acc + i}
+            val out = v.fold(mutableListOf<Int>()) { acc, i -> acc.apply { add(i) } }
+            out shouldBe range.toList()
         }
     }
 }
