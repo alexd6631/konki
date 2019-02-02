@@ -1,7 +1,7 @@
 package io.monkeypatch.kollections
 
 @Suppress("UNCHECKED_CAST")
-data class PVector<T>(
+data class PVector<out T>(
     val size: Int,
     private val shift: Int,
     private val root: Node,
@@ -10,7 +10,7 @@ data class PVector<T>(
     private val tailOffset
         get() = if (size < 32) 0 else (size - 1).ushr(5).shl(5)
 
-    operator fun plus(elem: T): PVector<T> =
+    operator fun plus(elem: @UnsafeVariance T): PVector<T> =
         if (size - tailOffset < 32) {
             val newTail = tail + (elem as Any?)
             PVector(size + 1, shift, root, newTail)
@@ -31,16 +31,15 @@ data class PVector<T>(
 
     private fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
 
-    private fun pushTail(level: Int, parent: Node, tailNode: Node): Node {
-        val subIndex = (size - 1).indexAtLevel(level)
-        val nodeToInsert = if (level == 5) tailNode else {
-            val child = parent.data[subIndex] as Node?
-            child?.let { pushTail(level - 5, it, tailNode) } ?: newPath(level - 5, tailNode)
-        }
-        return Node(parent.data.clone()).apply {
+    private fun pushTail(level: Int, parent: Node, tailNode: Node): Node =
+        Node(parent.data.clone()).apply {
+            val subIndex = (size - 1).indexAtLevel(level)
+            val nodeToInsert = if (level == 5) tailNode else {
+                val child = parent.data[subIndex] as Node?
+                child?.let { pushTail(level - 5, it, tailNode) } ?: newPath(level - 5, tailNode)
+            }
             data[subIndex] = nodeToInsert
         }
-    }
 
     operator fun get(i: Int): T =
         if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
@@ -62,7 +61,7 @@ data class PVector<T>(
             node.data
         }
 
-    fun update(i: Int, elem: T): PVector<T> =
+    fun update(i: Int, elem: @UnsafeVariance T): PVector<T> =
         if (i in 0 until size) {
             if (i >= tailOffset) {
                 val newTail = tail.copyOf().also {
@@ -110,16 +109,17 @@ private fun newPath(shift: Int, node: Node): Node =
     if (shift == 0) node
     else Node().apply { data[0] = newPath(shift - 5, node) }
 
-private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node = Node(
-    if (level == 0) {
-        node.data.copyOf().also { it[i.indexAtLeaf()] = elem }
-    } else {
-        val subIndex = i.indexAtLevel(level)
-        node.data.copyOf().also {
-            it[subIndex] = copyPath(i, level - 5, node.data[subIndex] as Node, elem)
+private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node =
+    Node(
+        if (level == 0) {
+            node.data.copyOf().also { it[i.indexAtLeaf()] = elem }
+        } else {
+            val subIndex = i.indexAtLevel(level)
+            node.data.copyOf().also {
+                it[subIndex] = copyPath(i, level - 5, node.data[subIndex] as Node, elem)
+            }
         }
-    }
-)
+    )
 
 private fun Int.indexAtLeaf() = this and 0x01f
 
