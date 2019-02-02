@@ -4,18 +4,27 @@ import org.openjdk.jmh.annotations.Benchmark
 
 private val v = generateVector(1_000_000)
 
-open class GenerationBenchmark {
+open class PVectorGenerationBenchmark {
     @Benchmark
-    fun testGenerate1() {
-        (0 until 1_000_000).fold(emptyPersistentVector<Int>()) { acc, i -> acc + i }
+    fun testGenerate() {
+        generateVector(1_000_000)
+    }
+
+    @Benchmark
+    fun testPop() {
+        (1 .. 1_000_000).fold(v) { acc, _ -> acc.pop() }
     }
 }
 
-open class PVectorBenchmark {
-
+open class PVectorFoldBenchmark {
     @Benchmark
     fun testFold() {
         v.fold(0) { acc, i -> acc + i }
+    }
+
+    @Benchmark
+    fun testFoldWithSequence() {
+        v.asSequence().fold(0) { acc, i -> acc + i }
     }
 }
 

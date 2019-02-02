@@ -1,5 +1,10 @@
 package io.monkeypatch.kollections
 
+/**
+ * A Kotlin port of PersistentVector based on Clojure implementation
+ *
+ * https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentVector.java
+ */
 @Suppress("UNCHECKED_CAST")
 data class PVector<out T>(
     val size: Int,
@@ -102,6 +107,38 @@ data class PVector<out T>(
             i += array.size
         }
         return acc
+    }
+
+    fun pop(): PVector<T> = when (size) {
+        0 -> error("Cannot pop empty vector")
+        1 -> emptyPersistentVector()
+        else -> {
+            if (size - tailOffset > 1) {
+                PVector(size - 1, shift, root, tail.copyOf(tail.size - 1))
+            } else {
+                val newTail = arrayFor(size - 2)
+                val newRoot = popTail(shift, root) ?: EMPTY_NODE
+
+                if (shift > 5 && newRoot.data[1] == null) {
+                    PVector(size - 1, shift - 5, newRoot.data[0] as Node, newTail)
+                } else {
+                    PVector(size - 1, shift, newRoot, newTail)
+                }
+            }
+        }
+    }
+
+    private fun popTail(level: Int, node: Node): Node? {
+        val subIndex = (size - 2).indexAtLevel(level)
+        return when {
+            level > 5 -> {
+                val newChild = popTail(level - 5, node.data[subIndex] as Node)
+                if (newChild == null && subIndex == 0) null
+                else Node(node.data.copyOf().also { it[subIndex] = newChild })
+            }
+            subIndex == 0 -> null
+            else -> Node(node.data.copyOf().also { it[subIndex] = null })
+        }
     }
 }
 

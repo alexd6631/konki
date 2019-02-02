@@ -4,7 +4,6 @@ import io.kotlintest.properties.Gen
 import io.kotlintest.properties.assertAll
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import kotlin.random.Random
 
 const val nVectors = 1000//1_000_000
 const val nIterations = 100
@@ -54,12 +53,26 @@ internal class PVectorTest : StringSpec() {
             }
         }
 
-        "test native fold" {
+        "test fold" {
             val range = 0 until nVectors
             val v = range.fold(emptyPersistentVector<Int>()) { acc, i -> acc + i }
 
             val out = v.fold(mutableListOf<Int>()) { acc, i -> acc.apply { add(i) } }
             out shouldBe range.toList()
+        }
+
+        "test pop" {
+            val n = 10000
+            val fullVector = generateVector(n)
+            val res = (1 .. n).fold(fullVector) { acc, i ->
+                acc.pop().also { v ->
+                    v.size shouldBe n - i
+                    v.asSequence().forEachIndexed { index, i ->
+                        i shouldBe index
+                    }
+                }
+            }
+            res.size shouldBe 0
         }
     }
 }
@@ -73,3 +86,7 @@ private fun generateVectors(n: Int): List<PVector<Int>> {
     }
     return vectors
 }
+
+
+private fun generateVector(n: Int): PVector<Int> =
+    (0 until n).fold(emptyPersistentVector()) { acc, i -> acc + i }
