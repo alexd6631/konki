@@ -1,5 +1,7 @@
 package io.monkeypatch.kollections
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 /**
  * A Kotlin port of PersistentVector based on Clojure implementation
  *
@@ -21,11 +23,11 @@ data class PVector<out T>(
             PVector(size + 1, shift, root, newTail)
         } else {
             val newTail = arrayOf(elem as Any?)
-            val tailNode = Node(tail)
+            val tailNode = Node(root.edit, tail)
             if (fullCapacityReached()) {
-                val newRoot = Node().apply {
+                val newRoot = Node(root.edit).apply {
                     data[0] = root
-                    data[1] = newPath(shift, tailNode)
+                    data[1] = newPath(root.edit, shift, tailNode)
                 }
                 PVector(size + 1, shift + 5, newRoot, newTail)
             } else {
@@ -37,14 +39,15 @@ data class PVector<out T>(
     private fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
 
     private fun pushTail(level: Int, parent: Node, tailNode: Node): Node =
-        Node(parent.data.clone()).apply {
+        Node(parent.edit, parent.data.withCopy { newData ->
             val subIndex = (size - 1).indexAtLevel(level)
-            val nodeToInsert = if (level == 5) tailNode else {
+
+            newData[subIndex] = if (level == 5) tailNode else {
                 val child = parent.data[subIndex] as Node?
-                child?.let { pushTail(level - 5, it, tailNode) } ?: newPath(level - 5, tailNode)
+                child?.let { pushTail(level - 5, it, tailNode) }
+                    ?: newPath(root.edit, level - 5, tailNode)
             }
-            data[subIndex] = nodeToInsert
-        }
+        })
 
     operator fun get(i: Int): T =
         if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
@@ -69,7 +72,7 @@ data class PVector<out T>(
     fun update(i: Int, elem: @UnsafeVariance T): PVector<T> =
         if (i in 0 until size) {
             if (i >= tailOffset) {
-                val newTail = tail.copyOf().also {
+                val newTail = tail.withCopy {
                     it[i.indexAtLeaf()] = elem as Any?
                 }
                 PVector(size, shift, root, newTail)
@@ -134,42 +137,44 @@ data class PVector<out T>(
             level > 5 -> {
                 val newChild = popTail(level - 5, node.data[subIndex] as Node)
                 if (newChild == null && subIndex == 0) null
-                else Node(node.data.copyOf().also { it[subIndex] = newChild })
+                else Node(root.edit, node.data.withCopy { it[subIndex] = newChild })
             }
             subIndex == 0 -> null
-            else -> Node(node.data.copyOf().also { it[subIndex] = null })
+            else -> Node(root.edit, node.data.withCopy { it[subIndex] = null })
         }
     }
 }
 
-private fun newPath(shift: Int, node: Node): Node =
+private fun newPath(edit: AtomicBoolean, shift: Int, node: Node): Node =
     if (shift == 0) node
-    else Node().apply { data[0] = newPath(shift - 5, node) }
+    else Node(edit).apply { data[0] = newPath(edit, shift - 5, node) }
 
 private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node =
-    Node(
+    Node(node.edit, node.data.withCopy { newData ->
         if (level == 0) {
-            node.data.copyOf().also { it[i.indexAtLeaf()] = elem }
+            newData[i.indexAtLeaf()] = elem
         } else {
             val subIndex = i.indexAtLevel(level)
-            node.data.copyOf().also {
-                it[subIndex] = copyPath(i, level - 5, node.data[subIndex] as Node, elem)
-            }
+            newData[subIndex] = copyPath(i, level - 5, node.data[subIndex] as Node, elem)
         }
-    )
+    })
 
 private fun Int.indexAtLeaf() = this and 0x01f
 
 private fun Int.indexAtLevel(level: Int) = (this ushr level) and 0x01f
 
+private inline fun <T> Array<T>.withCopy(block: (Array<T>) -> Unit): Array<T> = copyOf().also(block)
+
+
 data class Node(
+    val edit: AtomicBoolean,
     val data: Array<Any?>
 ) {
-    constructor() : this(arrayOfNulls(32))
+    constructor(edit: AtomicBoolean) : this(edit, arrayOfNulls(32))
 }
 
-
-val EMPTY_NODE = Node(Array(32) { null })
+val NODEDIT = AtomicBoolean(false)
+val EMPTY_NODE = Node(NODEDIT, Array(32) { null })
 fun <T> emptyPersistentVector(): PVector<T> =
     PVector(0, 5, EMPTY_NODE, emptyArray())
 
