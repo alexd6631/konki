@@ -173,18 +173,8 @@ data class Node(
     constructor(edit: AtomicBoolean) : this(edit, arrayOfNulls(32))
 }
 
-val NODEDIT = AtomicBoolean(false)
-val EMPTY_NODE = Node(NODEDIT, Array(32) { null })
+private val NODEDIT = AtomicBoolean(false)
+private val EMPTY_NODE = Node(NODEDIT, Array(32) { null })
+
 fun <T> emptyPersistentVector(): PVector<T> =
     PVector(0, 5, EMPTY_NODE, emptyArray())
-
-fun main() {
-    val end = (0..204800).fold(emptyPersistentVector<Int>()) { acc, i ->
-        val after = acc + i
-        //println(after)
-        after
-    }
-    println(end[1024])
-    println(end.update(42, 777)[42])
-    println("Done")
-}
