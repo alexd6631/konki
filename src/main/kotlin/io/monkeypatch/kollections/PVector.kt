@@ -10,9 +10,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 @Suppress("UNCHECKED_CAST")
 data class PVector<out T>(
     val size: Int,
-    private val shift: Int,
-    private val root: Node,
-    private val tail: Array<Any?>
+    internal val shift: Int,
+    internal val root: Node,
+    internal val tail: Array<Any?>
 ) {
     private val tailOffset
         get() = if (size < 32) 0 else (size - 1).ushr(5).shl(5)
@@ -175,6 +175,105 @@ data class Node(
     fun subNode(i: Int) = data[i] as Node
     fun subNodeOrNull(i: Int) = data[i] as Node?
 }
+
+@Suppress("UNCHECKED_CAST")
+data class TVector<T>(
+    @Volatile private var size: Int,
+    @Volatile private var shift: Int,
+    @Volatile private var root: Node,
+    @Volatile private var tail: Array<Any?>
+) {
+
+    constructor(vector: PVector<T>) : this(
+        vector.size,
+        vector.shift,
+        editableRoot(vector.root),
+        editableTail(vector.tail)
+    )
+
+    private val tailOffset
+        get() = if (size < 32) 0 else (size - 1).ushr(5).shl(5)
+
+    private inline fun <T> ensuringEditable(block: () -> T): T =
+        if (root.edit.get()) block() else throw IllegalAccessException("Transient used after persisted")
+
+    private fun ensureEditable(node: Node) =
+        if (node.edit == root.edit) node else Node(root.edit, node.data.copyOf())
+
+    private inline fun ensuringEditable(node: Node, block: Node.() -> Unit): Node =
+        ensureEditable(node).apply(block)
+
+    operator fun plus(elem: T): TVector<T> = ensuringEditable {
+        if (size - tailOffset < 32) {
+            tail[size.indexAtLeaf()] = elem
+        } else {
+            val tailNode = Node(root.edit, tail)
+            tail = arrayOfNulls<Any?>(32).also { it[0] = elem }
+            if (fullCapacityReached()) {
+                root = Node(root.edit).apply {
+                    data[0] = root
+                    data[1] = newPath(root.edit, shift, tailNode)
+                }
+                shift += 5
+            } else {
+                root = pushTail(shift, root, tailNode)
+            }
+        }
+        size += 1
+        this
+    }
+
+    private fun pushTail(level: Int, parent: Node, tailNode: Node): Node =
+        ensuringEditable(parent) {
+            val subIndex = (size - 1).indexAtLevel(level)
+
+            data[subIndex] = if (level == 5) tailNode else {
+                val child = parent.subNodeOrNull(subIndex)
+                child?.let { pushTail(level - 5, it, tailNode) }
+                    ?: newPath(root.edit, level - 5, tailNode)
+            }
+        }
+
+    private fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
+
+
+    private fun arrayFor(i: Int): Array<Any?> =
+        if (i >= tailOffset) tail
+        else {
+            var node = root
+            var level = shift
+            while (level > 0) {
+                node = node.data[i.indexAtLevel(level)] as Node
+                level -= 5
+            }
+            node.data
+        }
+
+    private fun editableArrayFor(i: Int): Array<Any?> =
+        if (i >= tailOffset) tail
+        else {
+            var node = root
+            var level = shift
+            while (level > 0) {
+                node = ensureEditable(node.data[i.indexAtLevel(level)] as Node)
+                level -= 5
+            }
+            node.data
+        }
+
+
+    operator fun get(i: Int): T =
+        if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
+        else throw IndexOutOfBoundsException()
+
+    fun getOrNull(i: Int): T? =
+        if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
+        else null
+}
+
+private fun editableRoot(node: Node) = Node(AtomicBoolean(true), node.data.copyOf())
+
+private fun editableTail(tail: Array<Any?>): Array<Any?> = tail.copyOf(32)
 
 private val NODEDIT = AtomicBoolean(false)
 private val EMPTY_NODE = Node(NODEDIT, Array(32) { null })
