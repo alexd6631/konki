@@ -43,7 +43,7 @@ data class PVector<out T>(
             val subIndex = (size - 1).indexAtLevel(level)
 
             newData[subIndex] = if (level == 5) tailNode else {
-                val child = parent.data[subIndex] as Node?
+                val child = parent.subNodeOrNull(subIndex)
                 child?.let { pushTail(level - 5, it, tailNode) }
                     ?: newPath(root.edit, level - 5, tailNode)
             }
@@ -123,7 +123,7 @@ data class PVector<out T>(
                 val newRoot = popTail(shift, root) ?: EMPTY_NODE
 
                 if (shift > 5 && newRoot.data[1] == null) {
-                    PVector(size - 1, shift - 5, newRoot.data[0] as Node, newTail)
+                    PVector(size - 1, shift - 5, newRoot.subNode(0), newTail)
                 } else {
                     PVector(size - 1, shift, newRoot, newTail)
                 }
@@ -135,7 +135,7 @@ data class PVector<out T>(
         val subIndex = (size - 2).indexAtLevel(level)
         return when {
             level > 5 -> {
-                val newChild = popTail(level - 5, node.data[subIndex] as Node)
+                val newChild = popTail(level - 5, node.subNode(subIndex))
                 if (newChild == null && subIndex == 0) null
                 else Node(root.edit, node.data.withCopy { it[subIndex] = newChild })
             }
@@ -155,7 +155,7 @@ private fun <T> copyPath(i: Int, level: Int, node: Node, elem: T): Node =
             newData[i.indexAtLeaf()] = elem
         } else {
             val subIndex = i.indexAtLevel(level)
-            newData[subIndex] = copyPath(i, level - 5, node.data[subIndex] as Node, elem)
+            newData[subIndex] = copyPath(i, level - 5, node.subNode(subIndex), elem)
         }
     })
 
@@ -171,6 +171,9 @@ data class Node(
     val data: Array<Any?>
 ) {
     constructor(edit: AtomicBoolean) : this(edit, arrayOfNulls(32))
+
+    fun subNode(i: Int) = data[i] as Node
+    fun subNodeOrNull(i: Int) = data[i] as Node?
 }
 
 private val NODEDIT = AtomicBoolean(false)
