@@ -64,7 +64,7 @@ internal class PVectorTest : StringSpec() {
         "test pop" {
             val n = 10000
             val fullVector = generateVector(n)
-            val res = (1 .. n).fold(fullVector) { acc, i ->
+            val res = (1..n).fold(fullVector) { acc, i ->
                 acc.pop().also { v ->
                     v.size shouldBe n - i
                     v.asSequence().forEachIndexed { index, i ->
@@ -73,6 +73,24 @@ internal class PVectorTest : StringSpec() {
                 }
             }
             res.size shouldBe 0
+        }
+    }
+}
+
+
+internal class TVectorTest : StringSpec() {
+    init {
+
+        "test append and get" {
+            val n = 100000
+            val v = emptyPersistentVector<Int>().withTransient {
+                (0 until n).fold(it) { acc, i -> acc + i }
+            }
+
+            v.size shouldBe n
+            for (j in 0 until n) {
+                v[j] shouldBe j
+            }
         }
     }
 }

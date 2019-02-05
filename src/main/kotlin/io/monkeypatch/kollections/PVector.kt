@@ -143,6 +143,11 @@ data class PVector<out T>(
             else -> Node(root.edit, node.data.withCopy { it[subIndex] = null })
         }
     }
+
+    fun asTransient(): TVector<@UnsafeVariance T> = TVector(this)
+
+    inline fun withTransient(block: (TVector<@UnsafeVariance T>) -> TVector<@UnsafeVariance T>): PVector<@UnsafeVariance T> =
+        asTransient().let(block).persistent()
 }
 
 private fun newPath(edit: AtomicBoolean, shift: Int, node: Node): Node =
@@ -178,21 +183,23 @@ data class Node(
 
 @Suppress("UNCHECKED_CAST")
 data class TVector<T>(
-    @Volatile private var size: Int,
+    @Volatile private var _size: Int,
     @Volatile private var shift: Int,
     @Volatile private var root: Node,
     @Volatile private var tail: Array<Any?>
 ) {
 
-    constructor(vector: PVector<T>) : this(
+    internal constructor(vector: PVector<T>) : this(
         vector.size,
         vector.shift,
         editableRoot(vector.root),
         editableTail(vector.tail)
     )
 
+    val size get() = _size
+
     private val tailOffset
-        get() = if (size < 32) 0 else (size - 1).ushr(5).shl(5)
+        get() = if (_size < 32) 0 else (_size - 1).ushr(5).shl(5)
 
     private inline fun <T> ensuringEditable(block: () -> T): T =
         if (root.edit.get()) block() else throw IllegalAccessException("Transient used after persisted")
@@ -203,9 +210,15 @@ data class TVector<T>(
     private inline fun ensuringEditable(node: Node, block: Node.() -> Unit): Node =
         ensureEditable(node).apply(block)
 
+    fun persistent(): PVector<T> = ensuringEditable {
+        root.edit.set(false)
+        val trimmedTail = tail.copyOf(_size - tailOffset)
+        PVector(_size, shift, root, trimmedTail)
+    }
+
     operator fun plus(elem: T): TVector<T> = ensuringEditable {
-        if (size - tailOffset < 32) {
-            tail[size.indexAtLeaf()] = elem
+        if (_size - tailOffset < 32) {
+            tail[_size.indexAtLeaf()] = elem
         } else {
             val tailNode = Node(root.edit, tail)
             tail = arrayOfNulls<Any?>(32).also { it[0] = elem }
@@ -219,13 +232,13 @@ data class TVector<T>(
                 root = pushTail(shift, root, tailNode)
             }
         }
-        size += 1
+        _size += 1
         this
     }
 
     private fun pushTail(level: Int, parent: Node, tailNode: Node): Node =
         ensuringEditable(parent) {
-            val subIndex = (size - 1).indexAtLevel(level)
+            val subIndex = (_size - 1).indexAtLevel(level)
 
             data[subIndex] = if (level == 5) tailNode else {
                 val child = parent.subNodeOrNull(subIndex)
@@ -234,7 +247,7 @@ data class TVector<T>(
             }
         }
 
-    private fun fullCapacityReached() = (size ushr 5) > (1 shl shift)
+    private fun fullCapacityReached() = (_size ushr 5) > (1 shl shift)
 
 
     private fun arrayFor(i: Int): Array<Any?> =
@@ -263,11 +276,11 @@ data class TVector<T>(
 
 
     operator fun get(i: Int): T =
-        if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
+        if (i in 0 until _size) arrayFor(i)[i.indexAtLeaf()] as T
         else throw IndexOutOfBoundsException()
 
     fun getOrNull(i: Int): T? =
-        if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
+        if (i in 0 until _size) arrayFor(i)[i.indexAtLeaf()] as T
         else null
 }
 

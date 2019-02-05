@@ -11,9 +11,19 @@ open class PVectorGenerationBenchmark {
     }
 
     @Benchmark
+    fun testGenerateTransient() {
+        generateVectorTransient(1_000_000)
+    }
+
+    @Benchmark
     fun testPop() {
         (1 .. 1_000_000).fold(v) { acc, _ -> acc.pop() }
     }
+
+    /*@Benchmark
+    fun testPopTransient() {
+        (1 .. 1_000_000).fold(v.asTransient()) { acc, _ -> acc.pop() }
+    }*/
 }
 
 open class PVectorFoldBenchmark {
@@ -41,3 +51,8 @@ private fun generateVectors(n: Int): List<PVector<Int>> {
     }
     return vectors
 }
+
+private fun generateVectorTransient(n: Int): PVector<Int> =
+    emptyPersistentVector<Int>().withTransient {
+        (0 until n).fold(it) { acc, i -> acc + i }
+    }
