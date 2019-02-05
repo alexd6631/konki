@@ -1,5 +1,4 @@
 import me.champeau.gradle.JMHPluginExtension
-import me.champeau.gradle.JMHTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -17,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.2.1")
 }
 
@@ -38,7 +37,7 @@ compileJmhKotlin.kotlinOptions.jvmTarget = jvmTarget
 
 configure<JMHPluginExtension> {
     fork = 1
-    include = listOf("testGenerate*")
+    //include = listOf("testGenerate*")
     //iterations = 3
 }
 

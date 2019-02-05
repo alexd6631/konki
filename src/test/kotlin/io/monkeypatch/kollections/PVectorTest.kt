@@ -74,6 +74,12 @@ internal class PVectorTest : StringSpec() {
             }
             res.size shouldBe 0
         }
+
+        "test first and last" {
+            val v = generateVector(100000)
+            v.first() shouldBe 0
+            v.last() shouldBe 99999
+        }
     }
 }
 

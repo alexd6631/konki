@@ -57,6 +57,10 @@ data class PVector<out T>(
         if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
         else null
 
+    fun first(): T = this[0]
+
+    fun last(): T = this[size - 1]
+
     private fun arrayFor(i: Int): Array<Any?> =
         if (i >= tailOffset) tail
         else {
@@ -282,6 +286,10 @@ data class TVector<T>(
     fun getOrNull(i: Int): T? =
         if (i in 0 until _size) arrayFor(i)[i.indexAtLeaf()] as T
         else null
+
+    fun first(): T = this[0]
+
+    fun last(): T = this[size - 1]
 }
 
 private fun editableRoot(node: Node) = Node(AtomicBoolean(true), node.data.copyOf())
