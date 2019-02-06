@@ -5,7 +5,7 @@ import io.kotlintest.properties.assertAll
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
-const val nVectors = 1000//1_000_000
+const val nVectors = 10000//1_000_000
 const val nIterations = 100
 
 internal class PVectorTest : StringSpec() {
@@ -96,6 +96,31 @@ internal class TVectorTest : StringSpec() {
             v.size shouldBe n
             for (j in 0 until n) {
                 v[j] shouldBe j
+            }
+        }
+
+        "test update" {
+            val vectors = generateVectors(nVectors)
+
+            assertAll(nIterations, Gen.choose(10, nVectors)) { i ->
+                val k = i / 2
+                val oldVect = vectors[i]
+                val v = oldVect.withTransient {
+                    it.update(k, 42).update(i - 1, 84)
+                }
+
+                v.size shouldBe i
+                for (j in 0 until i) {
+                    when (j) {
+                        k -> v[j] shouldBe 42
+                        i - 1 -> v[j] shouldBe 84
+                        else -> v[j] shouldBe j
+                    }
+                }
+
+                for (j in 0 until i) {
+                    oldVect[j] shouldBe j
+                }
             }
         }
     }

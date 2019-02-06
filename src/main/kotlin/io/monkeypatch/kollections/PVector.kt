@@ -148,9 +148,9 @@ data class PVector<out T>(
         }
     }
 
-    fun asTransient(): TVector<@UnsafeVariance T> = TVector(this)
+    fun asTransient(): TVect<T> = TVector(this)
 
-    inline fun withTransient(block: (TVector<@UnsafeVariance T>) -> TVector<@UnsafeVariance T>): PVector<@UnsafeVariance T> =
+    inline fun withTransient(block: (TVect<T>) -> TVect<T>): PVector<@UnsafeVariance T> =
         asTransient().let(block).persistent()
 }
 
@@ -184,6 +184,8 @@ data class Node(
     fun subNode(i: Int) = data[i] as Node
     fun subNodeOrNull(i: Int) = data[i] as Node?
 }
+
+typealias TVect<T> = TVector<@UnsafeVariance T>
 
 @Suppress("UNCHECKED_CAST")
 data class TVector<T>(
@@ -278,6 +280,26 @@ data class TVector<T>(
             node.data
         }
 
+
+    fun update(i: Int, elem: T): TVector<T> = ensuringEditable {
+        if (i in 0 until size) {
+            if (i >= tailOffset) {
+                tail[i.indexAtLeaf()] = elem as Any?
+            } else {
+                root = doUpdate(shift, root, i, elem)
+            }
+            this
+        } else throw IndexOutOfBoundsException()
+    }
+
+    private fun doUpdate(level: Int, node: Node, i: Int, elem: T): Node = ensuringEditable(node) {
+        if (level == 0) {
+            data[i.indexAtLeaf()] = elem
+        } else {
+            val subIndex = i.indexAtLevel(level)
+            data[subIndex] = doUpdate(level - 5, node.subNode(subIndex), i, elem)
+        }
+    }
 
     operator fun get(i: Int): T =
         if (i in 0 until _size) arrayFor(i)[i.indexAtLeaf()] as T
