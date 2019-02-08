@@ -105,19 +105,6 @@ data class PVector<out T>(
 
     val seq get() = asSequence()
 
-    fun <R> fold(initial: R, f: (R, T) -> R): R {
-        var i = 0
-        var acc = initial
-        while (i < size) {
-            val array = arrayFor(i)
-            for (e in array) {
-                acc = f(acc, e as T)
-            }
-            i += array.size
-        }
-        return acc
-    }
-
     fun pop(): PVector<T> = when (size) {
         0 -> error("Cannot pop empty vector")
         1 -> emptyPersistentVector()
@@ -154,6 +141,40 @@ data class PVector<out T>(
 
     inline fun withTransient(block: (TVect<T>) -> TVect<T>): PVector<@UnsafeVariance T> =
         asTransient().let(block).persistent()
+
+    fun <R> fold(initial: R, f: (R, T) -> R): R {
+        var i = 0
+        var acc = initial
+        while (i < size) {
+            val array = arrayFor(i)
+            for (e in array) {
+                acc = f(acc, e as T)
+            }
+            i += array.size
+        }
+        return acc
+    }
+
+    fun <U> map(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient {
+        fold(it) { acc, e -> acc + f(e) }
+    }
+
+    fun <U> mapNative(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient { init ->
+        var i = 0
+        var acc = init
+        while (i < size) {
+            val array = arrayFor(i)
+            for (e in array) {
+                acc += f(e as T)
+            }
+            i += array.size
+        }
+        acc
+    }
+
+    fun filter(f: (T) -> Boolean): PVector<T> = emptyPersistentVector<T>().withTransient {
+        fold(it) { acc, e -> if (f(e)) acc + e else acc }
+    }
 }
 
 private fun newPath(edit: AtomicBoolean, shift: Int, node: Node): Node =
