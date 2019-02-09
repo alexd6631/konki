@@ -28,7 +28,6 @@ internal class PVectorTest : StringSpec() {
 
             assertAll(nIterations, Gen.choose(10, nVectors)) { i ->
                 val k = i / 2
-                //println(i)
                 val v = vectors[i].update(k, 42).update(i - 1, 84)
                 v.size shouldBe i
                 for (j in 0 until i) {
@@ -47,7 +46,7 @@ internal class PVectorTest : StringSpec() {
             assertAll(nIterations, Gen.choose(0, nVectors)) { i ->
                 val v = vectors[i]
 
-                v.asSequence().forEachIndexed { index, i ->
+                v.seq.forEachIndexed { index, i ->
                     i shouldBe index
                 }
             }
@@ -67,7 +66,7 @@ internal class PVectorTest : StringSpec() {
             val res = (1..n).fold(fullVector) { acc, i ->
                 acc.pop().also { v ->
                     v.size shouldBe n - i
-                    v.asSequence().forEachIndexed { index, i ->
+                    v.seq.forEachIndexed { index, i ->
                         i shouldBe index
                     }
                 }

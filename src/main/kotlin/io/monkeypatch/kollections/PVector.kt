@@ -103,6 +103,8 @@ data class PVector<out T>(
         }
     }
 
+    val seq get() = asSequence()
+
     fun <R> fold(initial: R, f: (R, T) -> R): R {
         var i = 0
         var acc = initial
