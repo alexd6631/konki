@@ -33,8 +33,30 @@ open class PVectorFoldBenchmark {
     }
 
     @Benchmark
+    fun testFoldUsingInline() {
+        v.foldUsingInline(0) { acc, i -> acc + i }
+    }
+
+    @Benchmark
     fun testFoldWithSequence() {
         v.asSequence().fold(0) { acc, i -> acc + i }
+    }
+}
+
+open class PVectorMapBenchmark {
+    @Benchmark
+    fun testMapWithRegularFold() {
+        v.map { it + 1 }
+    }
+
+    @Benchmark
+    fun testMapWithFoldInline() {
+        v.mapWithFoldInline { it + 1 }
+    }
+
+    @Benchmark
+    fun testMapNative() {
+        v.mapNative { it + 1 }
     }
 }
 

@@ -155,8 +155,27 @@ data class PVector<out T>(
         return acc
     }
 
+    fun <R> foldUsingInline(initial: R, f: (R, T) -> R): R = foldInline(initial, f)
+
+    private inline fun <R> foldInline(initial: R, f: (R, T) -> R): R {
+        var i = 0
+        var acc = initial
+        while (i < size) {
+            val array = arrayFor(i)
+            for (e in array) {
+                acc = f(acc, e as T)
+            }
+            i += array.size
+        }
+        return acc
+    }
+
     fun <U> map(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient {
         fold(it) { acc, e -> acc + f(e) }
+    }
+
+    fun <U> mapWithFoldInline(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient {
+        foldInline(it) { acc, e -> acc + f(e) }
     }
 
     fun <U> mapNative(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient { init ->
