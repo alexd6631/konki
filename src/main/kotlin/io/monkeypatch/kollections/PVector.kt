@@ -181,6 +181,14 @@ data class PVector<out T>(
     fun <U> flatMap(f: (T) -> Iterable<U>): PVector<U> = emptyPersistentVector<U>().withTransient {
         foldInline(it) { acc, e -> f(e).fold(acc) { a, u -> a + u } }
     }
+
+    operator fun plus(other: Iterable<@UnsafeVariance T>) = withTransient {
+        other.fold(it) { acc, t -> acc + t }
+    }
+
+    operator fun plus(other: PVector<@UnsafeVariance T>) = withTransient {
+        other.fold(it) { acc, t -> acc + t }
+    }
 }
 
 private fun newPath(edit: AtomicBoolean, shift: Int, node: Node): Node =
@@ -352,3 +360,5 @@ private val EMPTY_NODE = Node(NODEDIT, Array(32) { null })
 
 fun <T> emptyPersistentVector(): PVector<T> =
     PVector(0, 5, EMPTY_NODE, emptyArray())
+
+fun <T> persistenVectorOf(vararg items: T) = emptyPersistentVector<T>() + items.asIterable()

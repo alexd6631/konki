@@ -80,7 +80,7 @@ internal class PVectorTest : StringSpec() {
             v.last() shouldBe 99999
         }
 
-        "testMap" {
+        "test map" {
             val v = generateVector(10000)
             val v2 = v.map { it + 1 }
             v2.size shouldBe 10000
@@ -89,7 +89,7 @@ internal class PVectorTest : StringSpec() {
             }
         }
 
-        "testFilter" {
+        "test filter" {
             val v = generateVector(10000)
             val v2 = v.filter { it % 2 == 0 }
             v2.size shouldBe 5000
@@ -98,7 +98,7 @@ internal class PVectorTest : StringSpec() {
             }
         }
 
-        "testFlatMap" {
+        "test flatMap" {
             val v = generateVector(10000)
             val v2 = v.flatMap { listOf(it, -it) }
             v2.size shouldBe 20000
@@ -108,6 +108,29 @@ internal class PVectorTest : StringSpec() {
                 } else {
                     i shouldBe -(index / 2)
                 }
+            }
+        }
+
+        "test concat" {
+            val v1 = persistenVectorOf(1, 2, 3)
+            val v2 = persistenVectorOf(4, 5, 6)
+            val v = v1 + v2
+            println(v)
+
+            v.size shouldBe 6
+            v.seq.forEachIndexed { index, i ->
+                i shouldBe index + 1
+            }
+        }
+
+        "test concat iterable" {
+            val v1 = persistenVectorOf(1, 2, 3)
+            val v = v1 + listOf(4, 5, 6)
+            println(v)
+
+            v.size shouldBe 6
+            v.seq.forEachIndexed { index, i ->
+                i shouldBe index + 1
             }
         }
     }
