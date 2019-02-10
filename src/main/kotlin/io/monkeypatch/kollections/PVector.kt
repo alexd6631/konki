@@ -105,6 +105,8 @@ data class PVector<out T>(
 
     val seq get() = asSequence()
 
+    val iter get() = asSequence().asIterable()
+
     fun pop(): PVector<T> = when (size) {
         0 -> error("Cannot pop empty vector")
         1 -> emptyPersistentVector()
@@ -142,20 +144,18 @@ data class PVector<out T>(
     inline fun withTransient(block: (TVect<T>) -> TVect<T>): PVector<@UnsafeVariance T> =
         asTransient().let(block).persistent()
 
-    fun <R> fold(initial: R, f: (R, T) -> R): R {
-        var i = 0
-        var acc = initial
-        while (i < size) {
-            val array = arrayFor(i)
-            for (e in array) {
-                acc = f(acc, e as T)
-            }
-            i += array.size
+    /*
+    fun <R> foldTailrec(initial: R, f: (R, T) -> R): R {
+        tailrec fun aux(i: Int, acc: R): R {
+            return if (i < size) {
+                val array = arrayFor(i)
+                aux(i + array.size, array.fold(acc) { a, e -> f(a, e as T) })
+            } else acc
         }
-        return acc
-    }
+        return aux(0, initial)
+    }*/
 
-    fun <R> foldUsingInline(initial: R, f: (R, T) -> R): R = foldInline(initial, f)
+    fun <R> fold(initial: R, f: (R, T) -> R): R = foldInline(initial, f)
 
     private inline fun <R> foldInline(initial: R, f: (R, T) -> R): R {
         var i = 0
@@ -171,28 +171,15 @@ data class PVector<out T>(
     }
 
     fun <U> map(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient {
-        fold(it) { acc, e -> acc + f(e) }
-    }
-
-    fun <U> mapWithFoldInline(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient {
         foldInline(it) { acc, e -> acc + f(e) }
     }
 
-    fun <U> mapNative(f: (T) -> U): PVector<U> = emptyPersistentVector<U>().withTransient { init ->
-        var i = 0
-        var acc = init
-        while (i < size) {
-            val array = arrayFor(i)
-            for (e in array) {
-                acc += f(e as T)
-            }
-            i += array.size
-        }
-        acc
+    fun filter(f: (T) -> Boolean): PVector<T> = emptyPersistentVector<T>().withTransient {
+        foldInline(it) { acc, e -> if (f(e)) acc + e else acc }
     }
 
-    fun filter(f: (T) -> Boolean): PVector<T> = emptyPersistentVector<T>().withTransient {
-        fold(it) { acc, e -> if (f(e)) acc + e else acc }
+    fun <U> flatMap(f: (T) -> Iterable<U>): PVector<U> = emptyPersistentVector<U>().withTransient {
+        foldInline(it) { acc, e -> f(e).fold(acc) { a, u -> a + u } }
     }
 }
 

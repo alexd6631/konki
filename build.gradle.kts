@@ -37,7 +37,7 @@ compileJmhKotlin.kotlinOptions.jvmTarget = jvmTarget
 
 configure<JMHPluginExtension> {
     fork = 1
-    include = listOf("PVectorFoldBenchmark", "PVectorMapBenchmark")
+    include = listOf("PVectorMapBenchmark")
     //iterations = 3
 }
 

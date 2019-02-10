@@ -79,6 +79,37 @@ internal class PVectorTest : StringSpec() {
             v.first() shouldBe 0
             v.last() shouldBe 99999
         }
+
+        "testMap" {
+            val v = generateVector(10000)
+            val v2 = v.map { it + 1 }
+            v2.size shouldBe 10000
+            v2.seq.forEachIndexed { index, i ->
+                i shouldBe index + 1
+            }
+        }
+
+        "testFilter" {
+            val v = generateVector(10000)
+            val v2 = v.filter { it % 2 == 0 }
+            v2.size shouldBe 5000
+            v2.seq.forEachIndexed { index, i ->
+                i shouldBe index * 2
+            }
+        }
+
+        "testFlatMap" {
+            val v = generateVector(10000)
+            val v2 = v.flatMap { listOf(it, -it) }
+            v2.size shouldBe 20000
+            v2.seq.forEachIndexed { index, i ->
+                if (index % 2 == 0) {
+                    i shouldBe index / 2
+                } else {
+                    i shouldBe -(index / 2)
+                }
+            }
+        }
     }
 }
 
