@@ -133,6 +133,26 @@ internal class PVectorTest : StringSpec() {
                 i shouldBe index + 1
             }
         }
+
+        "test take" {
+            val v1 = generateVector(100)
+            val v = v1.take(10)
+
+            v.size shouldBe 10
+            v.seq.forEachIndexed { index, i ->
+                i shouldBe index
+            }
+        }
+
+        "test take (out of bounds)" {
+            val v1 = generateVector(5)
+            val v = v1.take(10)
+            v1.size shouldBe 5
+            v.size shouldBe 5
+            v.seq.forEachIndexed { index, i ->
+                i shouldBe index
+            }
+        }
     }
 }
 

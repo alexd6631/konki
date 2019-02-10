@@ -1,6 +1,7 @@
 package io.monkeypatch.kollections
 
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.min
 
 /**
  * A Kotlin port of PersistentVector based on Clojure implementation
@@ -188,6 +189,10 @@ data class PVector<out T>(
 
     operator fun plus(other: PVector<@UnsafeVariance T>) = withTransient {
         other.fold(it) { acc, t -> acc + t }
+    }
+
+    fun take(n: Int) = emptyPersistentVector<T>().withTransient {
+        asSequence(end = min(size, n)).fold(it) { acc, t -> acc + t }
     }
 }
 

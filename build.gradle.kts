@@ -35,9 +35,10 @@ compileTestKotlin.kotlinOptions.jvmTarget = jvmTarget
 compileJmhKotlin.kotlinOptions.jvmTarget = jvmTarget
 */
 
+
 configure<JMHPluginExtension> {
     fork = 1
-    include = listOf("PVectorMapBenchmark")
+    //include = listOf("PVectorMapBenchmark")
     //iterations = 3
 }
 
