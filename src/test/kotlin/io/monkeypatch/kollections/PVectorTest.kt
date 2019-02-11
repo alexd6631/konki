@@ -199,6 +199,22 @@ internal class TVectorTest : StringSpec() {
                 }
             }
         }
+
+        "test pop" {
+            val n = 10000
+            val fullVector = generateVector(n).asTransient()
+            val res = (1..n).fold(fullVector) { acc, i ->
+                acc.pop().also { v ->
+                    val m = n - i
+                    v.size shouldBe m
+                    fullVector.size shouldBe m
+                    for (j in 0 until m) {
+                        v[j] shouldBe j
+                    }
+                }
+            }
+            res.size shouldBe 0
+        }
     }
 }
 

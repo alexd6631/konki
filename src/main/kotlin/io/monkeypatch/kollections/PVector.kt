@@ -356,6 +356,45 @@ data class TVector<T>(
     fun first(): T = this[0]
 
     fun last(): T = this[size - 1]
+
+    fun pop() = ensuringEditable {
+        when (size) {
+            0 -> error("Cannot pop empty vector")
+            1 -> {
+                _size = 0
+            }
+            else -> {
+                if ((size - 1).indexAtLeaf() == 0) {
+                    val newTail = editableArrayFor(size - 2)
+                    val newRoot = popTail(shift, root) ?: Node(root.edit)
+                    if (shift > 5 && newRoot.data[1] == null) {
+                        root = ensureEditable(newRoot.data[0] as Node)
+                        shift -= 5
+                    } else {
+                        root = newRoot
+                    }
+                    tail = newTail
+                }
+                _size -= 1
+            }
+        }
+        this
+    }
+
+    private fun popTail(level: Int, node: Node): Node? = ensuringEditable(node) {
+        val subIndex = (size - 2).indexAtLevel(level)
+        when {
+            level > 5 -> {
+                val newChild = popTail(level - 5, node.subNode(subIndex))
+                if (newChild == null && subIndex == 0) return null
+                else {
+                    data[subIndex] = newChild
+                }
+            }
+            subIndex == 0 -> return null
+            else -> data[subIndex] = null
+        }
+    }
 }
 
 private fun editableRoot(node: Node) = Node(AtomicBoolean(true), node.data.copyOf())
