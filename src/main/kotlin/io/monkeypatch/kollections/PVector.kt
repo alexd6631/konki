@@ -194,6 +194,8 @@ data class PVector<out T>(
     fun take(n: Int) = emptyPersistentVector<T>().withTransient {
         asSequence(end = min(size, n)).fold(it) { acc, t -> acc + t }
     }
+
+    override fun toString() = "PVector(${seq.joinToString(", ")})"
 }
 
 private fun newPath(edit: AtomicBoolean, shift: Int, node: Node): Node =

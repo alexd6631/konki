@@ -46,8 +46,8 @@ internal class PVectorTest : StringSpec() {
             assertAll(nIterations, Gen.choose(0, nVectors)) { i ->
                 val v = vectors[i]
 
-                v.seq.forEachIndexed { index, i ->
-                    i shouldBe index
+                v.seq.forEachIndexed { index, j ->
+                    j shouldBe index
                 }
             }
         }
@@ -115,7 +115,6 @@ internal class PVectorTest : StringSpec() {
             val v1 = persistenVectorOf(1, 2, 3)
             val v2 = persistenVectorOf(4, 5, 6)
             val v = v1 + v2
-            println(v)
 
             v.size shouldBe 6
             v.seq.forEachIndexed { index, i ->
@@ -126,7 +125,6 @@ internal class PVectorTest : StringSpec() {
         "test concat iterable" {
             val v1 = persistenVectorOf(1, 2, 3)
             val v = v1 + listOf(4, 5, 6)
-            println(v)
 
             v.size shouldBe 6
             v.seq.forEachIndexed { index, i ->
@@ -152,6 +150,11 @@ internal class PVectorTest : StringSpec() {
             v.seq.forEachIndexed { index, i ->
                 i shouldBe index
             }
+        }
+
+        "test toString" {
+            val v = generateVector(10)
+            v.toString() shouldBe "PVector(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)"
         }
     }
 }
