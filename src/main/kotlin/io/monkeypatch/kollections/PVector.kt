@@ -68,7 +68,7 @@ data class PVector<out T>(
             var node = root
             var level = shift
             while (level > 0) {
-                node = node.data[i.indexAtLevel(level)] as Node
+                node = node.subNode(i.indexAtLevel(level))
                 level -= 5
             }
             node.data
@@ -306,7 +306,7 @@ data class TVector<T>(
             var node = root
             var level = shift
             while (level > 0) {
-                node = node.data[i.indexAtLevel(level)] as Node
+                node = node.subNode(i.indexAtLevel(level))
                 level -= 5
             }
             node.data
@@ -318,7 +318,7 @@ data class TVector<T>(
             var node = root
             var level = shift
             while (level > 0) {
-                node = ensureEditable(node.data[i.indexAtLevel(level)] as Node)
+                node = ensureEditable(node.subNode(i.indexAtLevel(level)))
                 level -= 5
             }
             node.data
