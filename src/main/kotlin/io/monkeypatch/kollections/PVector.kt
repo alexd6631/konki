@@ -196,6 +196,20 @@ data class PVector<out T>(
     }
 
     override fun toString() = "PVector(${seq.joinToString(", ")})"
+
+    override fun equals(other: Any?): Boolean {
+        if (other is PVector<*>) {
+            return size == other.size &&
+                    seq.zip(other.seq) { a, b -> a == b }.all { it }
+        } else if (other is List<*>) {
+            return size == other.size &&
+                    seq.zip(other.asSequence()) { a, b -> a == b }.all { it }
+        }
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int =
+        foldInline(1) { hash, t -> 31 * hash + (t?.hashCode() ?: 0) }
 }
 
 private fun newPath(edit: AtomicBoolean, shift: Int, node: Node): Node =
@@ -431,4 +445,4 @@ private val EMPTY_NODE = Node(NODEDIT, Array(32) { null })
 fun <T> emptyPersistentVector(): PVector<T> =
     PVector(0, 5, EMPTY_NODE, emptyArray())
 
-fun <T> persistenVectorOf(vararg items: T) = emptyPersistentVector<T>() + items.asIterable()
+fun <T> persistentVectorOf(vararg items: T) = emptyPersistentVector<T>() + items.asIterable()

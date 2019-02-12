@@ -3,6 +3,7 @@ package io.monkeypatch.kollections
 import io.kotlintest.properties.Gen
 import io.kotlintest.properties.assertAll
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.StringSpec
 
 const val nVectors = 10000//1_000_000
@@ -112,8 +113,8 @@ internal class PVectorTest : StringSpec() {
         }
 
         "test concat" {
-            val v1 = persistenVectorOf(1, 2, 3)
-            val v2 = persistenVectorOf(4, 5, 6)
+            val v1 = persistentVectorOf(1, 2, 3)
+            val v2 = persistentVectorOf(4, 5, 6)
             val v = v1 + v2
 
             v.size shouldBe 6
@@ -123,7 +124,7 @@ internal class PVectorTest : StringSpec() {
         }
 
         "test concat iterable" {
-            val v1 = persistenVectorOf(1, 2, 3)
+            val v1 = persistentVectorOf(1, 2, 3)
             val v = v1 + listOf(4, 5, 6)
 
             v.size shouldBe 6
@@ -219,6 +220,36 @@ internal class TVectorTest : StringSpec() {
         "test toString" {
             val v = generateVector(10).asTransient()
             v.toString() shouldBe "TVector(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)"
+        }
+
+        "test equals/hasCode on vectors" {
+            val v1 = persistentVectorOf(1, 2, 3)
+            val v2 = persistentVectorOf(1, 2, 3)
+            val v3 = persistentVectorOf(4, 5, 6)
+            val v4 = persistentVectorOf(1, 2)
+
+            v1 shouldBe v2
+            v1 shouldNotBe v3
+            v1 shouldNotBe v4
+
+            v1.hashCode() shouldBe v2.hashCode()
+            v1.hashCode() shouldNotBe v3.hashCode()
+            v1.hashCode() shouldNotBe v4.hashCode()
+        }
+
+        "test equals/hasCode with lists" {
+            val v1 = persistentVectorOf(1, 2, 3)
+            val v2 = listOf(1, 2, 3)
+            val v3 = listOf(4, 5, 6)
+            val v4 = listOf(1, 2)
+
+            v1 shouldBe v2
+            v1 shouldNotBe v3
+            v1 shouldNotBe v4
+
+            v1.hashCode() shouldBe v2.hashCode()
+            v1.hashCode() shouldNotBe v3.hashCode()
+            v1.hashCode() shouldNotBe v4.hashCode()
         }
     }
 }
