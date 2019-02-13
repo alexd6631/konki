@@ -395,6 +395,30 @@ data class TVector<T>(
             else -> data[subIndex] = null
         }
     }
+
+    fun asSequence(start: Int = 0, end: Int = size) = Sequence {
+        object : Iterator<T> {
+            var i = start
+            var base = i - i % 32
+            var array = arrayFor(i)
+
+            override fun hasNext(): Boolean = i < end
+
+            override fun next(): T {
+                if (i - base == 32) {
+                    array = arrayFor(i)
+                    base += 32
+                }
+                return (array[i.indexAtLeaf()] as T).also { i += 1 }
+            }
+        }
+    }
+
+    val seq get() = asSequence()
+
+    val iter get() = asSequence().asIterable()
+
+    override fun toString() = "TVector(${seq.joinToString(", ")})"
 }
 
 private fun editableRoot(node: Node) = Node(AtomicBoolean(true), node.data.copyOf())

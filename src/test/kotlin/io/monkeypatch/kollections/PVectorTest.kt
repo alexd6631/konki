@@ -208,12 +208,17 @@ internal class TVectorTest : StringSpec() {
                     val m = n - i
                     v.size shouldBe m
                     fullVector.size shouldBe m
-                    for (j in 0 until m) {
-                        v[j] shouldBe j
+                    v.seq.forEachIndexed { index, i ->
+                        i shouldBe index
                     }
                 }
             }
             res.size shouldBe 0
+        }
+
+        "test toString" {
+            val v = generateVector(10).asTransient()
+            v.toString() shouldBe "TVector(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)"
         }
     }
 }
