@@ -1,5 +1,7 @@
 package io.monkeypatch.kollections
 
+import io.monkeypatch.kollections.vector.PVector
+import io.monkeypatch.kollections.vector.emptyPersistentVector
 import org.openjdk.jmh.annotations.Benchmark
 
 private val v = generateVector(1_000_000)
@@ -17,7 +19,7 @@ open class PVectorGenerationBenchmark {
 
     @Benchmark
     fun testPop() {
-        (1 .. 1_000_000).fold(v) { acc, _ -> acc.pop() }
+        (1 .. 1_000_000).fold(v) { acc, _ -> acc.removeLast() }
     }
 
     /*@Benchmark
@@ -55,6 +57,6 @@ private fun generateVectors(n: Int): List<PVector<Int>> {
 }
 
 private fun generateVectorTransient(n: Int): PVector<Int> =
-    emptyPersistentVector<Int>().withTransient {
+    emptyPersistentVector<Int>().asTransient {
         (0 until n).fold(it) { acc, i -> acc + i }
     }
