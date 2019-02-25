@@ -1,7 +1,7 @@
-package io.monkeypatch.kollections
+package org.alexd.kollections
 
-import io.monkeypatch.kollections.vector.PVector
-import io.monkeypatch.kollections.vector.emptyPersistentVector
+import org.alexd.konki.vector.PVector
+import org.alexd.konki.vector.emptyPersistentVector
 import org.openjdk.jmh.annotations.Benchmark
 
 private val v = generateVector(1_000_000)

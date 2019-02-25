@@ -1,4 +1,5 @@
 import me.champeau.gradle.JMHPluginExtension
+import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,6 +7,7 @@ plugins {
     kotlin("jvm") version "1.3.21"
     id("me.champeau.gradle.jmh") version "0.4.8"
     `maven-publish`
+    id("org.jetbrains.dokka") version "0.9.17"
 }
 
 group = "io.monkeypatch"
@@ -48,4 +50,8 @@ publishing {
             from(components["java"])
         }
     }
+}
+
+val dokka by tasks.getting(DokkaTask::class) {
+    outputDirectory = "$buildDir/javadoc"
 }

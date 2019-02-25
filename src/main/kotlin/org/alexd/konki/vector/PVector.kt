@@ -1,4 +1,4 @@
-package io.monkeypatch.kollections.vector
+package org.alexd.konki.vector
 
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
@@ -6,9 +6,14 @@ import kotlin.math.min
 
 
 /**
- * A Kotlin port of PersistentVector based on Clojure implementation
+ * A PersistentVector with "practically" constant time `plus`, `update`, `removeLast` methods.
+ * Common functional operators have been implemented, with optimal iteration speed.
+ * Other least common operators, are accessible through standard Iterable extensions.
  *
- * https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentVector.java
+ * As the vector is persistent and immutable, each operator return a new "version" of the vector.
+ *
+ * The implementation was based on algorithm found in Clojure implementation
+ * [https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentVector.java]
  */
 @Suppress("UNCHECKED_CAST")
 class PVector<out T> internal constructor(
@@ -21,6 +26,12 @@ class PVector<out T> internal constructor(
     private val tailOffset
         get() = if (size < 32) 0 else (size - 1).ushr(5).shl(5)
 
+    /**
+     * Creates a new persistent vector, by appending `elem` to it.
+     *
+     * This operation is "practically" linear time.
+     * It is O(n) 31/32 of times and O(log_32(n)) 1/32 time.
+     */
     operator fun plus(elem: @UnsafeVariance T): PVector<T> =
         if (size - tailOffset < 32) {
             val newTail = tail + (elem as Any?)
@@ -65,6 +76,11 @@ class PVector<out T> internal constructor(
             node.data
         }
 
+    /**
+     * Creates a new persistent vector, by modifying the element at index `i`
+     *
+     * @throws IndexOutOfBoundsException
+     */
     fun update(i: Int, elem: @UnsafeVariance T): PVector<T> =
         if (i in 0 until size) {
             if (i >= tailOffset) {
@@ -73,10 +89,18 @@ class PVector<out T> internal constructor(
                 }
                 PVector(size, shift, root, newTail)
             } else {
-                PVector(size, shift, copyPath(i, shift, root, elem), tail)
+                PVector(
+                    size,
+                    shift,
+                    copyPath(i, shift, root, elem),
+                    tail
+                )
             }
         } else throw IndexOutOfBoundsException()
 
+    /**
+     * Creates a new persistent vector, by removing the last element
+     */
     fun removeLast(): PVector<T> = when (size) {
         0 -> error("Cannot removeLast empty vector")
         1 -> emptyPersistentVector()

@@ -1,4 +1,4 @@
-package io.monkeypatch.kollections.vector
+package org.alexd.konki.vector
 
 import java.util.concurrent.atomic.AtomicBoolean
 

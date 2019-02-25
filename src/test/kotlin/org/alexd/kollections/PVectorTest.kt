@@ -1,13 +1,13 @@
-package io.monkeypatch.kollections
+package org.alexd.kollections
 
 import io.kotlintest.properties.Gen
 import io.kotlintest.properties.assertAll
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.StringSpec
-import io.monkeypatch.kollections.vector.PVector
-import io.monkeypatch.kollections.vector.emptyPersistentVector
-import io.monkeypatch.kollections.vector.persistentVectorOf
+import org.alexd.konki.vector.PVector
+import org.alexd.konki.vector.emptyPersistentVector
+import org.alexd.konki.vector.persistentVectorOf
 
 const val nVectors = 10000//1_000_000
 const val nIterations = 100

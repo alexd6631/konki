@@ -1,25 +1,48 @@
-package io.monkeypatch.kollections.vector
+package org.alexd.konki.vector
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Base class for common, read-only, methods between [PVector] and [TVector]
+ */
 @Suppress("UNCHECKED_CAST")
 abstract class BaseVector<out T> : Collection<T> {
     protected abstract fun arrayFor(i: Int): Array<Any?>
 
+    /**
+     * Get an element at the given index
+     *
+     * @throws IndexOutOfBoundsException
+     */
     operator fun get(i: Int): T =
         if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
         else throw IndexOutOfBoundsException()
 
+    /**
+     * Get an element at the given index, or null if out of bounds
+     */
     fun getOrNull(i: Int): T? =
         if (i in 0 until size) arrayFor(i)[i.indexAtLeaf()] as T
         else null
 
+    /**
+     * Get the first element of this vector
+     */
     fun first(): T = this[0]
 
+    /**
+     * Get the last element of this vector
+     */
     fun last(): T = this[size - 1]
 
+    /**
+     * Build a ranged sequence, to iterate over this vector
+     */
     fun rangedSequence(start: Int = 0, end: Int = size) = Sequence { rangedIterator(start, end) }
 
+    /**
+     * Build a ranged iterator, to iterate over this vector
+     */
     fun rangedIterator(start: Int = 0, end: Int = size): Iterator<T> =
         object : Iterator<T> {
             var i = start
@@ -37,6 +60,9 @@ abstract class BaseVector<out T> : Collection<T> {
             }
         }
 
+    /**
+     * Build an iterator over this vector
+     */
     override fun iterator(): Iterator<T> = rangedIterator()
 
     override fun equals(other: Any?): Boolean {
@@ -54,14 +80,23 @@ abstract class BaseVector<out T> : Collection<T> {
     override fun hashCode(): Int =
         fold(1) { hash, t -> 31 * hash + (t?.hashCode() ?: 0) }
 
+    /**
+     * Checks if the specified element is contained in this collection.
+     */
     override fun contains(element: @UnsafeVariance T): Boolean {
         forEach { if (it == element) return true }
         return false
     }
 
+    /**
+     * Checks if all elements in the specified collection are contained in this collection.
+     */
     override fun containsAll(elements: Collection<@UnsafeVariance T>): Boolean =
         elements.all { it in this }
 
+    /**
+     * Returns `true` if the collection is empty (contains no elements), `false` otherwise.
+     */
     override fun isEmpty(): Boolean = size == 0
 }
 

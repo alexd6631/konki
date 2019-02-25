@@ -1,10 +1,10 @@
-package io.monkeypatch.kollections
+package org.alexd.kollections
 
 import io.kotlintest.properties.Gen
 import io.kotlintest.properties.assertAll
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import io.monkeypatch.kollections.vector.emptyPersistentVector
+import org.alexd.konki.vector.emptyPersistentVector
 
 internal class TVectorTest : StringSpec() {
     init {
